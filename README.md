@@ -1,4 +1,8 @@
-To-Do List for the slider game:
+# slidergame
+
+First commit from local!
+
+# Slider GameTo-Do List
 
 [x] Made square movement easier
 [x] Added a coin that changes jump
