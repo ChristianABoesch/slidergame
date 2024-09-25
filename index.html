@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Platformer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #game {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            background-color: lightblue;
+        }
+
+        #player {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            bottom: 0; /* Start at ground level */
+            left: 0; /* Start position */
+        }
+
+        .platform {
+            position: absolute;
+            width: 100px;
+            height: 20px;
+            background-color: green;
+        }
+
+        .coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: yellow;
+            top: 550px; /* Adjusted position closer to the ground */
+            left: 200px; /* Coin's horizontal position */
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="player"></div>
+        <div class="platform" style="top: 300px; left: 100px;"></div>
+        <div class="platform" style="top: 400px; left: 300px;"></div>
+        <div class="coin"></div> <!-- Coin item positioned closer to the ground -->
+        <!-- Add more platforms or coins as needed -->
+    </div>
+    <script>
+        const player = document.getElementById('player');
+        const coin = document.querySelector('.coin');
+        const platforms = document.querySelectorAll('.platform');
+        let isJumping = false;
+        let gravity = 1; // Gravity for falling
+        let playerY = 0;
+        let playerX = 0; // New variable for horizontal position
+        let moveInterval; // Variable to hold the movement interval
+        let moveDirection = 0; // 1 for right, -1 for left
+        let jumpHeight = 100; // Default jump height
+
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && !isJumping) {
+                isJumping = true;
+                jump();
+            }
+            if (event.code === 'ArrowLeft') {
+                moveDirection = -1; // Move left
+                startMoving();
+            }
+            if (event.code === 'ArrowRight') {
+                moveDirection = 1; // Move right
+                startMoving();
+            }
+        });
+
+        document.addEventListener('keyup', (event) => {
+            if (event.code === 'ArrowLeft' || event.code === 'ArrowRight') {
+                stopMoving();
+            }
+        });
+
+        function startMoving() {
+            if (!moveInterval) { // Prevent multiple intervals
+                moveInterval = setInterval(() => {
+                    playerX += moveDirection * 5; // Move left or right
+                    player.style.left = playerX + 'px';
+                    checkCollision(); // Check for collision with the coin
+                }, 15); // Move every 15ms
+            }
+        }
+
+        function stopMoving() {
+            clearInterval(moveInterval);
+            moveInterval = null; // Reset the interval variable
+        }
+
+        function jump() {
+            let currentJumpHeight = jumpHeight; // Use the current jump height
+            let jumpInterval = setInterval(() => {
+                if (currentJumpHeight > 0) {
+                    playerY += 10; // Move up by 10 pixels
+                    currentJumpHeight -= 10; // Decrease jump height by 10 pixels
+                    player.style.bottom = playerY + 'px';
+                } else {
+                    clearInterval(jumpInterval);
+                    fall();
+                }
+            }, 15); // Jump interval
+        }
+
+        function fall() {
+            let fallInterval = setInterval(() => {
+                if (playerY > 0) { // Ensure the player doesn't go below ground level
+                    playerY -= 10; // Move down by 10 pixels
+                    player.style.bottom = playerY + 'px';
+                    checkPlatformCollision(); // Check for collision with platforms
+                } else {
+                    clearInterval(fallInterval);
+                    isJumping = false;
+                    playerY = 0; // Reset to ground level
+                }
+            }, 15); // Fall interval to match jump speed
+        }
+
+        function checkCollision() {
+            const playerRect = player.getBoundingClientRect();
+            const coinRect = coin.getBoundingClientRect();
+
+            if (
+                playerRect.x < coinRect.x + coinRect.width &&
+                playerRect.x + playerRect.width > coinRect.x &&
+                playerRect.y < coinRect.y + coinRect.height &&
+                playerRect.y + playerRect.height > coinRect.y
+            ) {
+                // Collision detected
+                jumpHeight += 200; // Increase jump height upon collecting the coin
+                coin.style.display = 'none'; // Hide the coin after collection
+            }
+        }
+
+        function checkPlatformCollision() {
+            const playerRect = player.getBoundingClientRect();
+
+            platforms.forEach(platform => {
+                const platformRect = platform.getBoundingClientRect();
+
+                // Check if the player is falling onto the platform
+                if (
+                    playerRect.x < platformRect.x + platformRect.width &&
+                    playerRect.x + playerRect.width > platformRect.x &&
+                    playerRect.y + playerRect.height >= platformRect.y &&
+                    playerRect.y + playerRect.height <= platformRect.y + 10 // Adjust for landing
+                ) {
+                    // Collision detected with platform
+                    playerY = platformRect.y - playerRect.height; // Position player on top of the platform
+                    player.style.bottom = playerY + 'px';
+                    isJumping = false; // Reset jumping state
+                }
+            });
+        }
+    </script>
+</body>
+</html>
