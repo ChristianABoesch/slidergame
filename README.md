@@ -1,11 +1,12 @@
-# slidergame
-
-First commit from local!
-
 # Slider GameTo-Do List
 
-## Future Additions
+## Completed Tasks
 - [x] Made square movement easier
 - [x] Added a coin that changes jump
-- [ ] Stop the jumping animation when square lands on rectangle
-- [ ] Add background music
+- [x] Stop the jumping animation when square lands on rectangle
+- [x] Add background music
+- [x] Make fall animation faster
+- [x] Restart "jump" sound each time
+
+## Future Additions
+- [ ] Allow square to jump similarly while on a platform

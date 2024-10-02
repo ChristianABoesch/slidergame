@@ -22,8 +22,8 @@
             width: 50px;
             height: 50px;
             background-color: red;
-            bottom: 0; /* Start at ground level */
-            left: 0; /* Start position */
+            bottom: 0;
+            left: 0;
         }
 
         .platform {
@@ -38,8 +38,17 @@
             width: 30px;
             height: 30px;
             background-color: yellow;
-            top: 550px; /* Adjusted position closer to the ground */
-            left: 200px; /* Coin's horizontal position */
+            top: 550px;
+            left: 200px;
+        }
+
+        .cloud {
+            position: absolute;
+            width: 60px;
+            height: 30px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -47,33 +56,63 @@
     <div id="game">
         <div id="player"></div>
         <div class="platform" style="top: 300px; left: 100px;"></div>
-        <div class="platform" style="top: 400px; left: 300px;"></div>
-        <div class="coin"></div> <!-- Coin item positioned closer to the ground -->
-        <!-- Add more platforms or coins as needed -->
+        <div class="coin"></div>
+        <!-- Clouds -->
+        <div class="cloud" style="top: 50px; left: 100px;"></div>
+        <div class="cloud" style="top: 30px; left: 300px;"></div>
+        <div class="cloud" style="top: 70px; left: 500px;"></div>
+        <div class="cloud" style="top: 40px; left: 700px;"></div>
     </div>
+
+    <!-- Audio elements -->
+    <audio id="background-music" loop>
+        <source src="audio/basicplatformer_musicloop.wav" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <audio id="jump-sound">
+        <source src="audio/jump.wav" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <audio id="coin-sound">
+        <source src="audio/coin.wav" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
     <script>
         const player = document.getElementById('player');
         const coin = document.querySelector('.coin');
         const platforms = document.querySelectorAll('.platform');
+        const backgroundMusic = document.getElementById('background-music');
+        const jumpSound = document.getElementById('jump-sound');
+        const coinSound = document.getElementById('coin-sound');
+
         let isJumping = false;
-        let gravity = 1; // Gravity for falling
         let playerY = 0;
-        let playerX = 0; // New variable for horizontal position
-        let moveInterval; // Variable to hold the movement interval
-        let moveDirection = 0; // 1 for right, -1 for left
-        let jumpHeight = 100; // Default jump height
+        let playerX = 0;
+        let moveInterval;
+        let moveDirection = 0;
+        let jumpHeight = 100;
+        let gravity = 1;
+        let isFalling = false;
+
+        // Play background music when the page loads
+        window.onload = function() {
+            backgroundMusic.play();
+        };
 
         document.addEventListener('keydown', (event) => {
-            if (event.code === 'Space' && !isJumping) {
+            if (event.code === 'Space' && !isJumping && !isFalling) {
                 isJumping = true;
                 jump();
             }
             if (event.code === 'ArrowLeft') {
-                moveDirection = -1; // Move left
+                moveDirection = -1;
                 startMoving();
             }
             if (event.code === 'ArrowRight') {
-                moveDirection = 1; // Move right
+                moveDirection = 1;
                 startMoving();
             }
         });
@@ -85,46 +124,55 @@
         });
 
         function startMoving() {
-            if (!moveInterval) { // Prevent multiple intervals
+            if (!moveInterval) {
                 moveInterval = setInterval(() => {
-                    playerX += moveDirection * 5; // Move left or right
+                    playerX += moveDirection * 5;
                     player.style.left = playerX + 'px';
-                    checkCollision(); // Check for collision with the coin
-                }, 15); // Move every 15ms
+                    checkCollision();
+                }, 15);
             }
         }
 
         function stopMoving() {
             clearInterval(moveInterval);
-            moveInterval = null; // Reset the interval variable
+            moveInterval = null;
         }
 
         function jump() {
-            let currentJumpHeight = jumpHeight; // Use the current jump height
+            jumpSound.pause(); // Stop the sound if it's already playing
+            jumpSound.currentTime = 0; // Reset the sound to the beginning
+            jumpSound.play(); // Play jump sound
+            let currentJumpHeight = jumpHeight;
+            playerY += 10; // Reset playerY to the platform height
+            player.style.bottom = playerY + 'px'; // Set initial jump position
+            gravity += 0.5; // Increase gravity for faster fall
             let jumpInterval = setInterval(() => {
                 if (currentJumpHeight > 0) {
-                    playerY += 10; // Move up by 10 pixels
-                    currentJumpHeight -= 10; // Decrease jump height by 10 pixels
+                    playerY += 10;
+                    currentJumpHeight -= 10;
                     player.style.bottom = playerY + 'px';
                 } else {
                     clearInterval(jumpInterval);
+                    isFalling = true; // Start falling after reaching the peak
                     fall();
                 }
-            }, 15); // Jump interval
+            }, 15);
         }
 
         function fall() {
             let fallInterval = setInterval(() => {
-                if (playerY > 0) { // Ensure the player doesn't go below ground level
-                    playerY -= 10; // Move down by 10 pixels
-                    player.style.bottom = playerY + 'px';
-                    checkPlatformCollision(); // Check for collision with platforms
-                } else {
+                playerY -= gravity; // Apply gravity
+                player.style.bottom = playerY + 'px';
+                checkPlatformCollision(); // Check for platform collision during fall
+
+                // Stop falling if player reaches the ground level
+                if (playerY <= 0) {
+                    playerY = 0;
                     clearInterval(fallInterval);
                     isJumping = false;
-                    playerY = 0; // Reset to ground level
+                    isFalling = false; // Reset falling state
                 }
-            }, 15); // Fall interval to match jump speed
+            }, 5);
         }
 
         function checkCollision() {
@@ -137,31 +185,38 @@
                 playerRect.y < coinRect.y + coinRect.height &&
                 playerRect.y + playerRect.height > coinRect.y
             ) {
-                // Collision detected
-                jumpHeight += 200; // Increase jump height upon collecting the coin
-                coin.style.display = 'none'; // Hide the coin after collection
+                coinSound.play(); // Play coin collect sound
+                jumpHeight += 200;
+                coin.style.display = 'none';
             }
         }
 
         function checkPlatformCollision() {
             const playerRect = player.getBoundingClientRect();
+            let onPlatform = false;
 
             platforms.forEach(platform => {
                 const platformRect = platform.getBoundingClientRect();
 
-                // Check if the player is falling onto the platform
                 if (
                     playerRect.x < platformRect.x + platformRect.width &&
                     playerRect.x + playerRect.width > platformRect.x &&
                     playerRect.y + playerRect.height >= platformRect.y &&
-                    playerRect.y + playerRect.height <= platformRect.y + 10 // Adjust for landing
+                    playerRect.y + playerRect.height <= platformRect.y + 10
                 ) {
-                    // Collision detected with platform
-                    playerY = platformRect.y - playerRect.height; // Position player on top of the platform
+                    playerY = platformRect.y; // Adjust player position to land on platform
                     player.style.bottom = playerY + 'px';
                     isJumping = false; // Reset jumping state
+                    isFalling = false; // Reset falling state
+                    onPlatform = true; // Player is on a platform
                 }
             });
+
+            if (!onPlatform && !isJumping && playerY > 0) {
+                // If not on a platform and not jumping, continue falling
+                isFalling = true; // Set falling state
+                fall();
+            }
         }
     </script>
 </body>
