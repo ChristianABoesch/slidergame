@@ -7,6 +7,8 @@
 - [x] Add background music
 - [x] Make fall animation faster
 - [x] Restart "jump" sound each time
+- [x] Make it so all coins can be collected
+- [x] Have character stay centered while moving right while objects in canvas shift left
 
 ## Future Additions
 - [ ] Allow square to jump similarly while on a platform

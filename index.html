@@ -57,11 +57,13 @@
         <div id="player"></div>
         <div class="platform" style="top: 300px; left: 100px;"></div>
         <div class="coin"></div>
+        <div class="coin" style="top: 260px; left: 125px;"></div>
         <!-- Clouds -->
         <div class="cloud" style="top: 50px; left: 100px;"></div>
         <div class="cloud" style="top: 30px; left: 300px;"></div>
         <div class="cloud" style="top: 70px; left: 500px;"></div>
         <div class="cloud" style="top: 40px; left: 700px;"></div>
+        <div id="warning" style="display: none;">Do not escape from view!</div>
     </div>
 
     <!-- Audio elements -->
@@ -82,7 +84,7 @@
 
     <script>
         const player = document.getElementById('player');
-        const coin = document.querySelector('.coin');
+        const coins = document.querySelectorAll('.coin'); // Select all coins
         const platforms = document.querySelectorAll('.platform');
         const backgroundMusic = document.getElementById('background-music');
         const jumpSound = document.getElementById('jump-sound');
@@ -126,9 +128,24 @@
         function startMoving() {
             if (!moveInterval) {
                 moveInterval = setInterval(() => {
-                    playerX += moveDirection * 5;
-                    player.style.left = playerX + 'px';
+                    const gameArea = document.getElementById('game');
+                    const centerX = gameArea.offsetWidth / 2; // Get the center of the game area
+                    const playerRect = player.getBoundingClientRect();
+
+                    // Check if the player is in the middle of the game area
+                    if (playerRect.left >= centerX - 25 && playerRect.left <= centerX + 25) {
+                        // Stop the player from moving further right
+                        if (moveDirection > 0) {
+                            moveDirection = 0; // Prevent right movement
+                        }
+                    } else {
+                        // Allow movement if not in the middle
+                        playerX += moveDirection * 5;
+                        player.style.left = playerX + 'px';
+                    }
+
                     checkCollision();
+                    shiftObjects(); // Call the function to shift other objects
                 }, 15);
             }
         }
@@ -177,18 +194,22 @@
 
         function checkCollision() {
             const playerRect = player.getBoundingClientRect();
-            const coinRect = coin.getBoundingClientRect();
 
-            if (
-                playerRect.x < coinRect.x + coinRect.width &&
-                playerRect.x + playerRect.width > coinRect.x &&
-                playerRect.y < coinRect.y + coinRect.height &&
-                playerRect.y + playerRect.height > coinRect.y
-            ) {
-                coinSound.play(); // Play coin collect sound
-                jumpHeight += 200;
-                coin.style.display = 'none';
-            }
+            coins.forEach(coin => {
+                const coinRect = coin.getBoundingClientRect();
+
+                if (
+                    playerRect.x < coinRect.x + coinRect.width &&
+                    playerRect.x + playerRect.width > coinRect.x &&
+                    playerRect.y < coinRect.y + coinRect.height &&
+                    playerRect.y + playerRect.height > coinRect.y
+                ) {
+                    coinSound.currentTime = 0; // Reset the sound to the beginning
+                    coinSound.play(); // Play coin collect sound
+                    jumpHeight += 200;
+                    coin.style.display = 'none'; // Hide the collected coin
+                }
+            });
         }
 
         function checkPlatformCollision() {
@@ -216,6 +237,50 @@
                 // If not on a platform and not jumping, continue falling
                 isFalling = true; // Set falling state
                 fall();
+            }
+        }
+
+        function checkPlayerPosition() {
+            const player = document.getElementById('player'); // Assuming the player has this ID
+            const warning = document.getElementById('warning');
+            
+            if (player.getBoundingClientRect().left < 0) {
+                warning.style.display = 'block'; // Show warning
+            } else {
+                warning.style.display = 'none'; // Hide warning
+            }
+        }
+
+        // Call this function in your game loop or on player movement
+
+        // New function to shift other objects
+        function shiftObjects() {
+            const gameArea = document.getElementById('game');
+            const centerX = gameArea.offsetWidth / 2; // Get the center of the game area
+            const playerRect = player.getBoundingClientRect();
+            
+            // Check if the player is in the middle of the game area
+            if (playerRect.left >= centerX - 25 && playerRect.left <= centerX + 25) {
+                const shiftAmount = 2; // Increase the shift amount for faster movement
+
+                // Shift all coins
+                coins.forEach(coin => {
+                    const coinRect = coin.getBoundingClientRect();
+                    coin.style.left = (coinRect.left - shiftAmount) + 'px'; // Shift left slightly
+                });
+
+                // Shift all platforms
+                platforms.forEach(platform => {
+                    const platformRect = platform.getBoundingClientRect();
+                    platform.style.left = (platformRect.left - shiftAmount) + 'px'; // Shift left slightly
+                });
+
+                // Shift all clouds
+                const clouds = document.querySelectorAll('.cloud');
+                clouds.forEach(cloud => {
+                    const cloudRect = cloud.getBoundingClientRect();
+                    cloud.style.left = (cloudRect.left - shiftAmount) + 'px'; // Shift left slightly
+                });
             }
         }
     </script>
