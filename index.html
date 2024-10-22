@@ -50,6 +50,13 @@
             border-radius: 15px;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
         }
+
+        .orange-coin {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: orange;
+        }
     </style>
 </head>
 <body>
@@ -57,7 +64,10 @@
         <div id="player"></div>
         <div class="platform" style="top: 300px; left: 100px;"></div>
         <div class="coin"></div>
-        <div class="coin" style="top: 260px; left: 125px;"></div>
+        <div class="orange-coin" style="top: 260px; left: 125px;"></div>
+        <!-- New orange coins -->
+        <div class="coin" style="top: 400px; left: 500px;"></div>
+        <div class="orange-coin" style="top: 350px; left: 800px;"></div>
         <!-- Clouds -->
         <div class="cloud" style="top: 50px; left: 100px;"></div>
         <div class="cloud" style="top: 30px; left: 300px;"></div>
@@ -68,7 +78,7 @@
 
     <!-- Audio elements -->
     <audio id="background-music" loop>
-        <source src="audio/basicplatformer_musicloop.wav" type="audio/mpeg">
+        <source src="audio/slidergame_musicloop.wav" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
 
@@ -84,7 +94,7 @@
 
     <script>
         const player = document.getElementById('player');
-        const coins = document.querySelectorAll('.coin'); // Select all coins
+        const coins = document.querySelectorAll('.coin, .orange-coin'); // Select all coins including orange coins
         const platforms = document.querySelectorAll('.platform');
         const backgroundMusic = document.getElementById('background-music');
         const jumpSound = document.getElementById('jump-sound');
@@ -195,6 +205,7 @@
         function checkCollision() {
             const playerRect = player.getBoundingClientRect();
 
+            // Check for all coins (yellow and orange)
             coins.forEach(coin => {
                 const coinRect = coin.getBoundingClientRect();
 
@@ -206,7 +217,14 @@
                 ) {
                     coinSound.currentTime = 0; // Reset the sound to the beginning
                     coinSound.play(); // Play coin collect sound
-                    jumpHeight += 200;
+                    
+                    // Check if the coin is yellow or orange
+                    if (coin.classList.contains('orange-coin')) {
+                        jumpHeight -= 100; // Decrease jump height for orange coins
+                    } else {
+                        jumpHeight += 200; // Increase jump height for yellow coins
+                    }
+                    
                     coin.style.display = 'none'; // Hide the collected coin
                 }
             });
