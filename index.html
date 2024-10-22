@@ -15,6 +15,7 @@
             width: 800px;
             height: 600px;
             background-color: lightblue;
+            overflow: hidden; /* Prevent objects from being viewable outside the canvas */
         }
 
         #player {
@@ -142,20 +143,23 @@
                     const centerX = gameArea.offsetWidth / 2; // Get the center of the game area
                     const playerRect = player.getBoundingClientRect();
 
-                    // Check if the player is in the middle of the game area
-                    if (playerRect.left >= centerX - 25 && playerRect.left <= centerX + 25) {
-                        // Stop the player from moving further right
-                        if (moveDirection > 0) {
-                            moveDirection = 0; // Prevent right movement
-                        }
-                    } else {
-                        // Allow movement if not in the middle
-                        playerX += moveDirection * 5;
+                    // Center the player on the canvas
+                    playerX = centerX - (playerRect.width / 2);
+                    player.style.left = playerX + 'px';
+
+                    // Allow movement if moving right
+                    if (moveDirection > 0 && playerX < centerX) {
+                        playerX += moveDirection * 5; // Move right
+                        player.style.left = playerX + 'px';
+                    } 
+                    // Allow movement if moving left only after moving to the center
+                    else if (moveDirection < 0 && playerX >= centerX) {
+                        playerX += moveDirection * 5; // Move left
                         player.style.left = playerX + 'px';
                     }
 
                     checkCollision();
-                    shiftObjects(); // Call the function to shift other objects
+                    shiftObjects(); // Call the function to shift other objects only if centered
                 }, 15);
             }
         }
@@ -273,33 +277,38 @@
 
         // New function to shift other objects
         function shiftObjects() {
-            const gameArea = document.getElementById('game');
-            const centerX = gameArea.offsetWidth / 2; // Get the center of the game area
-            const playerRect = player.getBoundingClientRect();
-            
-            // Check if the player is in the middle of the game area
-            if (playerRect.left >= centerX - 25 && playerRect.left <= centerX + 25) {
-                const shiftAmount = 2; // Increase the shift amount for faster movement
+            const shiftAmount = 2; // Amount to shift objects
 
-                // Shift all coins
-                coins.forEach(coin => {
-                    const coinRect = coin.getBoundingClientRect();
-                    coin.style.left = (coinRect.left - shiftAmount) + 'px'; // Shift left slightly
-                });
+            // Shift all coins
+            coins.forEach(coin => {
+                const coinRect = coin.getBoundingClientRect();
+                if (moveDirection < 0) {
+                    coin.style.left = (coinRect.left + shiftAmount) + 'px'; // Shift right
+                } else if (moveDirection > 0) {
+                    coin.style.left = (coinRect.left - shiftAmount) + 'px'; // Shift left
+                }
+            });
 
-                // Shift all platforms
-                platforms.forEach(platform => {
-                    const platformRect = platform.getBoundingClientRect();
-                    platform.style.left = (platformRect.left - shiftAmount) + 'px'; // Shift left slightly
-                });
+            // Shift all platforms
+            platforms.forEach(platform => {
+                const platformRect = platform.getBoundingClientRect();
+                if (moveDirection < 0) {
+                    platform.style.left = (platformRect.left + shiftAmount) + 'px'; // Shift right
+                } else if (moveDirection > 0) {
+                    platform.style.left = (platformRect.left - shiftAmount) + 'px'; // Shift left
+                }
+            });
 
-                // Shift all clouds
-                const clouds = document.querySelectorAll('.cloud');
-                clouds.forEach(cloud => {
-                    const cloudRect = cloud.getBoundingClientRect();
-                    cloud.style.left = (cloudRect.left - shiftAmount) + 'px'; // Shift left slightly
-                });
-            }
+            // Shift all clouds
+            const clouds = document.querySelectorAll('.cloud');
+            clouds.forEach(cloud => {
+                const cloudRect = cloud.getBoundingClientRect();
+                if (moveDirection < 0) {
+                    cloud.style.left = (cloudRect.left + shiftAmount) + 'px'; // Shift right
+                } else if (moveDirection > 0) {
+                    cloud.style.left = (cloudRect.left - shiftAmount) + 'px'; // Shift left
+                }
+            });
         }
     </script>
 </body>
